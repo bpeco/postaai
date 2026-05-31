@@ -3,8 +3,10 @@
 Pipeline que junta noticias AI de 21 fuentes 2x/día (09:00 y 18:00 ART) y genera el material editorial. Dos consumidores: **(a) la app iOS PostaAI** (le publica el Pool de cards al CDN) y **(b) el workflow de creador** (digest técnico + ideas + reels, por email).
 
 Runners:
-- **Nube (Etapa 5, prod del producto)**: GitHub Actions cron en `bpeco/postaai`, workflow `digest` (`.github/workflows/digest.yml`). Corre `--pool-only` → solo el Pool → push a `bpeco/postaai-content` → Vercel. Sin email.
-- **Local (Mac)**: launchd (`~/Library/LaunchAgents/com.bauti.ai-digest.plist`) — corre la versión completa (con digest/ideas/reels). **Se apaga cuando el cron en la nube queda validado**, sino se duplican drops.
+- **Nube (Etapa 5, prod del producto)**: GitHub Actions cron en `bpeco/postaai`, workflow `digest` (`.github/workflows/digest.yml`). Corre `--pool-only` → solo el Pool → push a `bpeco/postaai-content` → **Deploy Hook de Vercel** → CDN. Sin email. Este es el único runner activo.
+- **Local (Mac)**: launchd (`~/Library/LaunchAgents/com.bauti.ai-digest.plist`) — **APAGADO** (unloaded) desde Etapa 5, para no duplicar drops con la nube. Para recibir el digest/ideas/reels por email sin pisar el CDN de la nube, correr a mano: `./scripts/run-digest.sh --no-publish` (corre todo incluido el email, pero NO publica el Pool). Reactivar el cron local: `launchctl load ~/Library/LaunchAgents/com.bauti.ai-digest.plist` (ojo: vuelve la duplicación con la nube).
+
+> Vercel: el repo de contenido es privado y en plan Hobby Vercel **bloquea el auto-deploy** de commits cuyo autor no sea el dueño del proyecto (incluye bots de CI). Por eso el deploy se dispara con un **Deploy Hook** (`curl -X POST $VERCEL_DEPLOY_HOOK_URL`), que ignora el autor. El secret está en ambos repos.
 
 Es el **motor de contenido de PostaAI** (la app iOS). Ver `../CLAUDE.md` para el panorama; ver `../PostaAI/CLAUDE.md` para el contrato `Drop`/`Card`.
 
