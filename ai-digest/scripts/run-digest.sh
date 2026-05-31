@@ -8,14 +8,22 @@
 #   --dry-run     skip claude phases (4-7), emails (8-9) y publish (10). Tests phases 1-3 only.
 #   --no-email    skip the email phases (8-9) but still generate digest/ideas/reels + Pool + publish.
 #   --no-publish  skip phase 10 (no push al CDN). Útil para tests locales.
+#   --pool-only   solo lo que necesita la app: fases 1-3 + 7 (Pool) + 10 (publish). Saltea
+#                 digest/ideas/reels (4-6) y emails (8-9). 1 sola llamada a claude. Es el modo
+#                 del cron en la nube (Etapa 5): el digest/reels es workflow de creador, va a mano.
 
 set -euo pipefail
 
 # Explicit PATH so this script runs identically under launchd (clean env) and interactively.
 # Locations cover every binary the pipeline uses: claude, python3, jq, msmtp, curl, pandoc, base64.
-export PATH="/Users/Bauti/.local/bin:/Users/Bauti/.pyenv/shims:/opt/anaconda3/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
+# En CI (GitHub Actions) NO lo pisamos: el runner ubuntu tiene su propio PATH y las deps las
+# instala el workflow (claude en ~/.local/bin vía $GITHUB_PATH, python3 de actions/setup-python).
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  export PATH="/Users/Bauti/.local/bin:/Users/Bauti/.pyenv/shims:/opt/anaconda3/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
+fi
 
-DIR="/Users/Bauti/XP-SAM/ai-digest"
+# DIR = raíz de ai-digest, derivado del path del script → portable Mac/CI (no más hardcode).
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$DIR"
 
 STAMP="$(date +%Y-%m-%d-%H)"
@@ -27,14 +35,27 @@ TOP="/tmp/digest-top-$STAMP.json"
 DRY_RUN=0
 NO_EMAIL=0
 NO_PUBLISH=0
+POOL_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run)    DRY_RUN=1 ;;
     --no-email)   NO_EMAIL=1 ;;
     --no-publish) NO_PUBLISH=1 ;;
+    --pool-only)  POOL_ONLY=1 ;;
     *) echo "unknown flag: $arg" >&2; exit 2 ;;
   esac
 done
+
+# --pool-only saltea digest/ideas/reels → los emails (que los consumen) no tienen qué mandar.
+if (( POOL_ONLY )); then
+  NO_EMAIL=1
+fi
+
+# Estos paths se setean en las fases 4-6; con --pool-only se saltean, así que los inicializamos
+# vacíos para que el log final no reviente con `set -u`.
+digest_path=""
+ideas_path=""
+reels_path=""
 
 log() {
   local msg="[$(date +%H:%M:%S)] $*"
@@ -77,6 +98,10 @@ if (( DRY_RUN )); then
   exit 0
 fi
 
+if (( POOL_ONLY )); then
+  log "[4-6/10] skipping digest/ideas/reels (--pool-only — solo Pool para la app)"
+else
+
 # ── Phase 4: digest (claude -p) ──────────────────────────────────────────
 log "[4/10] generating digest via claude -p (~1-2 min)..."
 t=$SECONDS
@@ -116,9 +141,11 @@ else
   exit 1
 fi
 
+fi  # end del skip de fases 4-6 (--pool-only)
+
 # ── Phase 7: cards / Pool JSON (claude -p) ───────────────────────────────
 # Ensancha el rank a top ~35 (cap 5/source) y corre cards.md sobre ese set.
-# El Pool queda local en /tmp/ — el upload al CDN es Etapa 4.
+# El Pool va a /tmp/ y de ahí lo publica la fase 10 al CDN (postaai-content → Vercel).
 log "[7/10] generating Pool JSON (wider rank + claude -p cards.md, ~1-2 min)..."
 t=$SECONDS
 

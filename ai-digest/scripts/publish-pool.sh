@@ -4,13 +4,16 @@
 # Uso: ./publish-pool.sh <POOL_FILE>
 #
 # Asume:
-#   - Clone local en ~/postaai-content con remote 'origin' válido y permisos de push.
-#   - Slot inferido del horario (hora local < 14 = morning, else evening) — Etapa 5
-#     reemplaza esto con env vars del cron de GH Actions.
+#   - Un clone/checkout de postaai-content con remote 'origin' válido y permisos de push.
+#     Local (Mac): ~/postaai-content. En CI: lo pasa el workflow vía $CONTENT_REPO.
+#   - Slot inferido del horario local (hora < 14 = morning, else evening). En CI el workflow
+#     corre con TZ=America/Argentina/Buenos_Aires, así que `date` da hora ART (09/18) y la
+#     inferencia coincide con la Mac. Se puede forzar con $SLOT (morning|evening) si hace falta.
 
 set -euo pipefail
 
-CONTENT_REPO="$HOME/postaai-content"
+# CONTENT_REPO override por env (CI lo apunta al checkout del workspace); default Mac local.
+CONTENT_REPO="${CONTENT_REPO:-$HOME/postaai-content}"
 POOL_FILE="${1:-}"
 
 if [ -z "$POOL_FILE" ]; then
@@ -26,13 +29,15 @@ if [ ! -d "$CONTENT_REPO/.git" ]; then
   exit 2
 fi
 
-# Slot e ISO date
-HOUR="$(date +%H)"
+# Slot e ISO date. $SLOT se puede forzar por env; si no, se infiere de la hora local.
 DATE="$(date +%Y-%m-%d)"
-if [ "$HOUR" -lt 14 ]; then
-  SLOT="morning"
-else
-  SLOT="evening"
+if [ -z "${SLOT:-}" ]; then
+  HOUR="$(date +%H)"
+  if [ "$HOUR" -lt 14 ]; then
+    SLOT="morning"
+  else
+    SLOT="evening"
+  fi
 fi
 NOW_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
