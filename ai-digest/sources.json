@@ -1,0 +1,31 @@
+{
+  "_comment": "AI digest sources — all live-validated 2026-05-11. type: rss | hn_algolia | reddit_json | webfetch. Editá esta lista libremente; el script fetch-sources.sh la lee con jq.",
+  "sources": [
+    { "name": "tldr_ai",                          "type": "rss",          "url": "https://tldr.tech/api/rss/ai" },
+    { "name": "latent_space",                     "type": "rss",          "url": "https://www.latent.space/feed" },
+    { "name": "last_week_in_ai",                  "type": "rss",          "url": "https://lastweekin.ai/feed" },
+    { "name": "import_ai",                        "type": "rss",          "url": "https://importai.substack.com/feed" },
+    { "name": "the_batch",                        "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_the_batch.xml" },
+    { "name": "bens_bites",                       "type": "rss",          "url": "https://www.bensbites.com/feed" },
+    { "name": "the_rundown",                      "type": "rss",          "url": "https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml" },
+
+    { "name": "openai",                           "type": "rss",          "url": "https://openai.com/news/rss.xml" },
+    { "name": "deepmind",                         "type": "rss",          "url": "https://deepmind.google/blog/rss.xml" },
+    { "name": "google_ai",                        "type": "rss",          "url": "https://blog.google/technology/ai/rss/" },
+
+    { "name": "anthropic_news",                   "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml" },
+    { "name": "anthropic_engineering",            "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml" },
+    { "name": "anthropic_research",               "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml" },
+    { "name": "anthropic_claude_code_changelog",  "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_changelog_claude_code.xml" },
+    { "name": "meta_ai",                          "type": "rss",          "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_meta_ai.xml" },
+
+    { "name": "arxiv_ai",                         "type": "rss",          "url": "https://rss.arxiv.org/rss/cs.AI+cs.LG+cs.CL" },
+
+    { "name": "hn_ai",                            "type": "hn_algolia",   "url": "https://hn.algolia.com/api/v1/search?tags=front_page&query=AI&hitsPerPage=30" },
+    { "name": "reddit_localllama",                "type": "reddit_json",  "url": "https://www.reddit.com/r/LocalLLaMA/top.json?t=day&limit=15" },
+    { "name": "reddit_singularity",               "type": "reddit_json",  "url": "https://www.reddit.com/r/singularity/top.json?t=day&limit=15" },
+    { "name": "reddit_machinelearning",           "type": "reddit_json",  "url": "https://www.reddit.com/r/MachineLearning/top.json?t=day&limit=15" },
+
+    { "name": "mistral_news",                     "type": "webfetch",     "url": "https://mistral.ai/news" }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "date": "Mar 12 May",
+  "edition": "Edición de la tarde · 18:00",
+  "number": 184,
+  "status": "published",
+  "cards": [
+    {
+      "id": "claude5",
+      "tag": "Anthropic",
+      "headline": "Anthropic sacó Claude 5 y, posta, codea fino",
+      "take": "Para refactor y debug ya está nivel mid. Lo raro es que cuando se traba, se traba mucho.",
+      "context": "Después de seis meses sin lanzamiento mayor, Anthropic largó la familia Claude 5 — Opus, Sonnet y Haiku. El modelo grande mejora en SWE-bench Verified (de 72% a 81%), agente largo (200k tokens útiles) y razonamiento matemático. La movida fuerte es Sonnet 5: barato, rápido, y para tareas de código está peleando palmo a palmo con GPT-5.1.",
+      "editorial": "Lo que más cambió no es el benchmark, es la consistencia. Antes Claude te resolvía 8 de 10 tareas y se mandaba una macana fea en 2. Ahora son 9 limpitas y 1 donde te pide 'verificar manualmente'. Para producción, eso es la diferencia.",
+      "source": "anthropic.com/news/claude-5",
+      "sourceLabel": "anthropic.com",
+      "meta": "hace 2 horas",
+      "kind": ["modelos", "codigo"],
+      "product": "Claude Code"
+    },
+    {
+      "id": "oai-statsig",
+      "tag": "OpenAI",
+      "headline": "OpenAI le pagó una fortuna a Statsig",
+      "take": "Quieren todo el stack de producto adentro. Ya no quieren ser solo el modelo.",
+      "context": "OpenAI cerró la compra de Statsig (feature flags y A/B testing) por 1.1B en cash y acciones. El CEO de Statsig pasa a liderar 'Applications' — el equipo que mantiene ChatGPT, los GPTs y la API consumer. Es la tercera adquisición grande del año, después de Windsurf y Crossing Minds.",
+      "editorial": "El mensaje es clarito: OpenAI ya no compite con Anthropic solo en modelos. Compite con todo el SaaS que viva pegado al modelo. Si tenés una startup de copilot para X, esto te tiene que poner nervioso.",
+      "source": "openai.com/blog/welcoming-statsig",
+      "sourceLabel": "openai.com",
+      "meta": "hace 5 horas",
+      "kind": ["negocio"]
+    },
+    {
+      "id": "gemini3",
+      "tag": "Google DeepMind",
+      "headline": "Gemini 3 Pro le pasa por arriba a GPT-5 en casi todo",
+      "take": "Google volvió a la pelea de verdad. El gap de calidad se cerró, hermano.",
+      "context": "Google publicó la model card de Gemini 3 Pro. Lidera GPQA (89%), MMLU-Pro (87%), y empata con GPT-5.1 en SWE-bench. La novedad real es la ventana de contexto: 2M tokens estables (no se rompe a los 800k como antes). El modelo está disponible en AI Studio gratis hasta fin de mes.",
+      "editorial": "Durante dos años Gemini fue 'el que viene detrás'. Ya no. Si no lo probaste todavía, pasale uno de tus prompts difíciles antes de seguir pagando ChatGPT por costumbre.",
+      "source": "deepmind.google/gemini-3",
+      "sourceLabel": "deepmind.google",
+      "meta": "hace 8 horas",
+      "kind": ["modelos", "research"]
+    },
+    {
+      "id": "llama4",
+      "tag": "Meta",
+      "headline": "Llama 4 abre los pesos pero te pide título de GPU",
+      "take": "Open weights ≠ open. Si no tenés 8xH100, mirá la pelea desde la tribuna.",
+      "context": "Meta liberó los pesos de Llama 4 Behemoth (2T parámetros, MoE) y Llama 4 Maverick (400B). Behemoth requiere mínimo 8 H100 para inferencia razonable. Maverick corre en una sola GPU de 80GB con cuantización 4-bit. La licencia sigue siendo casi-Apache pero con la cláusula de >700M usuarios.",
+      "editorial": "El gesto de Meta es real: los modelos son competitivos. Pero el discurso de 'democratizar AI' choca con que solo Together, Groq y los hyperscalers pueden correrlos. El verdadero open source sigue siendo lo de Mistral chico y los chinos.",
+      "source": "ai.meta.com/llama",
+      "sourceLabel": "ai.meta.com",
+      "meta": "ayer",
+      "kind": ["open-source", "modelos"]
+    },
+    {
+      "id": "mistral-round",
+      "tag": "Mistral",
+      "headline": "Mistral levantó otra ronda monstruo — 2B de euros",
+      "take": "Los franceses no aflojan, pero el modelo de negocio sigue siendo un misterio.",
+      "context": "Mistral cerró Serie D por 2B de euros liderada por General Catalyst y Bpifrance, a valuación de 14B. La empresa todavía no publicó revenue, pero filtraron que cerraron contratos con Stellantis, BNP Paribas y el gobierno francés. La narrativa europea de 'soberanía AI' sigue pagando bien.",
+      "editorial": "Toda la guita europea fluyendo hacia el mismo lugar. Bien por Mistral, pero el ecosistema EU necesita 5 mistrales, no uno con 2B. La concentración nunca termina bien.",
+      "source": "mistral.ai/news/series-d",
+      "sourceLabel": "mistral.ai",
+      "meta": "ayer",
+      "kind": ["negocio"]
+    },
+    {
+      "id": "figure-fail",
+      "tag": "Figure",
+      "headline": "Un Figure 03 se cayó de jeta en vivo en una demo",
+      "take": "Los humanoides están a años todavía. Las demos lo confirman cada vez que pueden.",
+      "context": "En una demo en SF, un Figure 03 hizo cinco tareas de cocina seguidas y se cayó intentando agarrar una sartén. Brett Adcock subió un video del bloopers a X con buena onda, pero las acciones de competidores (1X, Apptronik) subieron 4% al cierre. Es la segunda caída pública del año para Figure.",
+      "editorial": "El hype de humanoides está dos años adelantado de la realidad técnica. Que Figure sea el más serio del rubro y todavía se caiga en una demo controlada te dice todo. Esto es 2030, no 2027.",
+      "source": "x.com/adcock_brett",
+      "sourceLabel": "x.com",
+      "meta": "hace 12 horas",
+      "kind": ["robots"]
+    }
+  ]
+}

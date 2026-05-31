@@ -1,0 +1,76 @@
+# ─── Secretos (nunca versionar) ───
+.env
+.env.*
+*.pem
+*.p8
+*.p12
+*.key
+secrets/
+*secret*
+*credential*
+
+# ─── macOS ───
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# ─── Python (ai-digest) ───
+.venv
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Logs y runtime del pipeline ───
+ai-digest/logs/
+*.log
+
+# ─── Estado runtime del pipeline (regenerable; el archivo canónico vive en el repo postaai-content) ───
+ai-digest/state/
+ai-digest/archive/
+
+# ─── Xcode / Swift (PostaAI) ───
+## Build artifacts
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+## User-specific Xcode state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+## Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.resolved
+
+## CocoaPods / Carthage (por si acaso)
+Pods/
+Carthage/Build/
+
+## fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ─── Misc ───
+.gstack/
+*.swp
+*~
+.idea/
