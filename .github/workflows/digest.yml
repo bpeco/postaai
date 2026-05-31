@@ -64,9 +64,9 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Configurar identidad git (para el commit a postaai-content)
-        # Email del bot oficial de GitHub Actions: matchea una cuenta real de GitHub.
-        # Vercel BLOQUEA el deploy si el email del committer no matchea una cuenta (probado),
-        # así que NO usar un email inventado tipo bot@postaai.app.
+        # Identidad válida cualquiera (git la exige para commitear). El deploy a Vercel NO
+        # depende de este autor: lo dispara el Deploy Hook (Vercel Hobby + repo privado
+        # bloquea el auto-deploy por-autor del Git integration).
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -77,3 +77,15 @@ jobs:
           # publish-pool.sh pushea al checkout de postaai-content del workspace.
           CONTENT_REPO: ${{ github.workspace }}/postaai-content
         run: ./ai-digest/scripts/run-digest.sh --pool-only
+
+      - name: Disparar deploy en Vercel (Deploy Hook)
+        # El hook deploya el último commit de postaai-content sin mirar el autor → evita
+        # el bloqueo de Hobby. Si el secret no está cargado todavía, no rompe el run.
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL no seteado — skip deploy hook" >&2
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Deploy hook disparado OK"
