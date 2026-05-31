@@ -161,9 +161,11 @@ NOW_ISO="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 if [ "$HOUR" -lt 12 ]; then
   EDITION_LABEL="Edición de la mañana · 09:00"
   EDITION_OFFSET=1
+  POOL_SLOT="morning"
 else
   EDITION_LABEL="Edición de la tarde · 18:00"
   EDITION_OFFSET=2
+  POOL_SLOT="evening"
 fi
 NUMBER="$(python3 -c "
 from datetime import date
@@ -228,9 +230,11 @@ fi
 if (( NO_PUBLISH )); then
   log "[10/10] skipping publish (--no-publish)"
 else
-  log "[10/10] publishing Pool to CDN repo..."
+  log "[10/10] publishing Pool to CDN repo (slot=$POOL_SLOT)..."
   t=$SECONDS
-  if ./scripts/publish-pool.sh "$POOL_FILE" 2>>"$LOG"; then
+  # Pasamos SLOT derivado de la edición → archive y etiqueta salen de la misma fuente
+  # (sino, en runs a horario raro, publish-pool podía inferir un slot distinto al label).
+  if SLOT="$POOL_SLOT" ./scripts/publish-pool.sh "$POOL_FILE" 2>>"$LOG"; then
     log "[10/10] done in $((SECONDS - t))s — Pool pushed"
   else
     log "[10/10] WARN publish failed (continuing) — see $LOG"

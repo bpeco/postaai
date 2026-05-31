@@ -64,9 +64,12 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Configurar identidad git (para el commit a postaai-content)
+        # Email del bot oficial de GitHub Actions: matchea una cuenta real de GitHub.
+        # Vercel BLOQUEA el deploy si el email del committer no matchea una cuenta (probado),
+        # así que NO usar un email inventado tipo bot@postaai.app.
         run: |
-          git config --global user.name "postaai-bot"
-          git config --global user.email "bot@postaai.app"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Correr pipeline (--pool-only) y publicar al CDN
         env:
