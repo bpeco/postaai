@@ -186,19 +186,38 @@ jq -n \
   > "$CARDS_INPUT"
 
 POOL_FILE="/tmp/digest-pool-$STAMP.json"
+POOL_RAW="/tmp/digest-pool-raw-$STAMP.txt"
 prompt_cards="$(cat prompts/cards.md)"
-if cat "$CARDS_INPUT" | claude -p "$prompt_cards" > "$POOL_FILE" 2>>"$LOG"; then
-  if ! jq empty "$POOL_FILE" 2>>"$LOG"; then
-    log "[7/10] FAILED — Pool JSON inválido; ver $POOL_FILE y $LOG"
-    exit 1
+
+# claude -p a veces desobedece y envuelve el JSON en ```json…``` o le mete prosa, aunque el
+# prompt pida "solo JSON". En un cron desatendido eso tira el drop. Blindaje: sanitizamos
+# (extraemos del primer { al último }) y reintentamos una vez si el JSON sigue inválido.
+pool_ok=0
+for attempt in 1 2; do
+  if ! cat "$CARDS_INPUT" | claude -p "$prompt_cards" > "$POOL_RAW" 2>>"$LOG"; then
+    log "[7/10] intento $attempt/2: claude falló — reintento"
+    continue
   fi
-  cards_count="$(jq '.cards | length' "$POOL_FILE")"
-  bytes=$(wc -c < "$POOL_FILE" | tr -d ' ')
-  log "[7/10] done in $((SECONDS - t))s — $POOL_FILE ($cards_count cards, $bytes bytes)"
-else
-  log "[7/10] FAILED (claude exit $?) — see $LOG"
+  python3 - "$POOL_RAW" > "$POOL_FILE" <<'PY'
+import sys
+raw = open(sys.argv[1], encoding="utf-8").read()
+i, j = raw.find("{"), raw.rfind("}")
+sys.stdout.write(raw[i:j + 1] if i != -1 and j > i else raw)
+PY
+  if jq empty "$POOL_FILE" 2>>"$LOG"; then
+    pool_ok=1
+    break
+  fi
+  log "[7/10] intento $attempt/2: Pool JSON inválido tras sanitizar — reintento"
+done
+
+if (( ! pool_ok )); then
+  log "[7/10] FAILED — Pool JSON inválido tras 2 intentos; ver $POOL_FILE y $LOG"
   exit 1
 fi
+cards_count="$(jq '.cards | length' "$POOL_FILE")"
+bytes=$(wc -c < "$POOL_FILE" | tr -d ' ')
+log "[7/10] done in $((SECONDS - t))s — $POOL_FILE ($cards_count cards, $bytes bytes)"
 
 # ── Phase 8: email A (digest + ideas técnico) ────────────────────────────
 if (( NO_EMAIL )); then
