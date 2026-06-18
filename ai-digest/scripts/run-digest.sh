@@ -79,11 +79,17 @@ elif command -v gtimeout >/dev/null 2>&1; then
 else
   _TIMEOUT_BIN=""
 fi
+# --tools "" : el pipeline es una transformación pura texto→texto/JSON, NO necesita tools. Con
+#   tools habilitados (default del CLI), claude a veces intenta usar uno y en headless con
+#   ~/.claude limpio (CI) se cuelga esperando aprobación para siempre (local anda porque Bauti
+#   tiene permisos pre-aprobados). Sin tools = nada que aprobar = no se cuelga. Era la causa del
+#   cron muerto desde ~16/06. (Probado: --tools "" → JSON OK; --bare suprime el output de -p, no usar.)
+CLAUDE_FLAGS=(--tools "")
 claude_cap() {
   if [ -n "$_TIMEOUT_BIN" ]; then
-    "$_TIMEOUT_BIN" "$CLAUDE_TIMEOUT" claude "$@"
+    "$_TIMEOUT_BIN" "$CLAUDE_TIMEOUT" claude "${CLAUDE_FLAGS[@]}" "$@"
   else
-    claude "$@"
+    claude "${CLAUDE_FLAGS[@]}" "$@"
   fi
 }
 
