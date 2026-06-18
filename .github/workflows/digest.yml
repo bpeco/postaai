@@ -75,6 +75,21 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      # DIAGNÓSTICO TEMPORAL: el pipeline empezó a colgarse en `claude -p` desde ~16/06 (los runs
+      # mueren a los 15min). Esta llamada trivial con --debug y cap de 90s aísla si el cuelgue es
+      # de auth/entorno de CI (vs el prompt/los datos). El output va al log de CI. Borrar una vez
+      # diagnosticado.
+      - name: Smoke test claude -p (diagnóstico del cuelgue)
+        continue-on-error: true
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          echo "claude version: $(claude --version 2>&1 || echo '??')"
+          echo "OAUTH token presente: $([ -n "$CLAUDE_CODE_OAUTH_TOKEN" ] && echo si || echo NO)"
+          echo "--- smoke: 'decí ok' | claude --debug -p (cap 90s) ---"
+          echo "hola" | timeout 90 claude --debug -p "Respondé únicamente con la palabra: ok" 2>&1 | head -120
+          echo "--- smoke exit code: ${PIPESTATUS[0]} (124 = timeout/cuelgue) ---"
+
       - name: Correr pipeline (--pool-only) y publicar al CDN
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
