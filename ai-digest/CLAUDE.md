@@ -30,6 +30,8 @@ run-digest.sh (entry point)
 
 **Por qué funciona en `claude -p`** (y por qué V1 no funcionaba): las llamadas a Claude son **stdin + prompt string, cero tool calls** → cero permission prompts → no se cuelga (clave para headless en CI). Claude solo procesa ~5KB de items ya curados, no los 8MB de XML crudo. La V1 fallaba porque intentaba auto-invocar una skill, y **las skills no se auto-invocan en modo `-p`**.
 
+> **`--tools ""` es obligatorio** (lo aplica el helper `claude_cap` en `run-digest.sh`). El CLI dejó tools habilitados por default en `-p`: con el prompt grande de `cards.md`, claude intenta usar un tool y en CI (con `~/.claude` limpio, sin permisos pre-aprobados) **se cuelga esperando aprobación para siempre**. Local no se nota porque Bauti tiene permisos OK. Esto mató el cron del 16/06 al 18/06. `--tools ""` desactiva todos los tools → nada que aprobar → no se cuelga. Además, cada llamada va envuelta en `claude_cap` (timeout `CLAUDE_TIMEOUT`=420s vía `timeout`/`gtimeout`): un cuelgue corta y reintenta en vez de quemar los 15min del job. (`--bare` NO: suprime el output de `-p`.)
+
 ## Comandos
 
 ```bash
@@ -57,7 +59,7 @@ Testear una fase aislada: `cat /tmp/digest-top-STAMP.json | claude -p "$(cat pro
 
 ## Archivos clave
 
-- `scripts/run-digest.sh` — orchestrator. PATH explícito al tope (corre igual bajo launchd que interactivo).
+- `scripts/run-digest.sh` — orchestrator. PATH explícito al tope (corre igual bajo launchd que interactivo). Helper `claude_cap` envuelve TODA llamada a claude con `--tools ""` + timeout (`CLAUDE_TIMEOUT`=420s). Fase 7 exige `>= MIN_CARDS` (3) o reintenta/falla — un `{"cards":[]}` no pasa.
 - `scripts/fetch-sources.sh` — curl paralelo; bodies en base64; usa `jq --rawfile` (no `--arg`) para feeds grandes.
 - `scripts/extract-items.py` — parser stdlib. `MAX_ITEMS_PER_SOURCE=30`. Limpia chars de control C0 que rompen el JSON.
 - `scripts/rank-items.py` — dedup (URL normalizada + Jaccard 0.85), score = `source_weight × recency + engagement_boost`, `MAX_PER_SOURCE=3` en el top final (evita que arxiv inunde).
