@@ -63,7 +63,35 @@ log() {
   echo "$msg" >> "$LOG"
 }
 
+# claude_cap: corre `claude` con un timeout duro. Sin esto, un `claude -p` headless se puede
+# colgar indefinidamente (visto: 8.8h local) y en CI choca contra timeout-minutes:15 → el job
+# muere SIN producir Pool. Con el cap, un cuelgue corta a CLAUDE_TIMEOUT (default 300s, holgado
+# vs ~217s que tarda la fase 7 sana) y devuelve no-cero → el caller reintenta o falla ruidoso.
+# Portable: timeout (CI/linux) → gtimeout (mac+coreutils) → sin cap con warning. Se usa en pipe
+# (cat X | claude_cap -p ...): como función bash, hereda stdin transparente.
+# 420s: holgura sobre los ~265s que tardó la fase 7 sana en una corrida real, y 2 intentos
+# (840s) entran en los 900s del job de CI. Un cuelgue real (indefinido) igual corta acá.
+CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-420}"
+if command -v timeout >/dev/null 2>&1; then
+  _TIMEOUT_BIN="timeout"
+elif command -v gtimeout >/dev/null 2>&1; then
+  _TIMEOUT_BIN="gtimeout"
+else
+  _TIMEOUT_BIN=""
+fi
+claude_cap() {
+  if [ -n "$_TIMEOUT_BIN" ]; then
+    "$_TIMEOUT_BIN" "$CLAUDE_TIMEOUT" claude "$@"
+  else
+    claude "$@"
+  fi
+}
+
 T0=$SECONDS
+
+if [ -z "$_TIMEOUT_BIN" ]; then
+  log "WARN: ni 'timeout' ni 'gtimeout' disponibles — las llamadas a claude corren SIN cap (instalá coreutils en Mac: brew install coreutils)"
+fi
 
 log "=== run-digest START stamp=$STAMP dry_run=$DRY_RUN no_email=$NO_EMAIL no_publish=$NO_PUBLISH ==="
 log "log file: $LOG"
@@ -107,7 +135,7 @@ log "[4/10] generating digest via claude -p (~1-2 min)..."
 t=$SECONDS
 prompt_digest="$(sed "s|STAMP_PLACEHOLDER|$STAMP|g" prompts/digest.md)"
 digest_path="digests/$STAMP.md"
-if cat "$TOP" | claude -p "$prompt_digest" > "$digest_path" 2>>"$LOG"; then
+if cat "$TOP" | claude_cap -p "$prompt_digest" > "$digest_path" 2>>"$LOG"; then
   bytes=$(wc -c < "$digest_path" | tr -d ' ')
   log "[4/10] done in $((SECONDS - t))s — $digest_path ($bytes bytes)"
 else
@@ -120,7 +148,7 @@ log "[5/10] generating ideas técnico via claude -p (~1-2 min)..."
 t=$SECONDS
 prompt_ideas="$(cat prompts/ideas.md)"
 ideas_path="ideas/$STAMP.md"
-if cat "$TOP" | claude -p "$prompt_ideas" > "$ideas_path" 2>>"$LOG"; then
+if cat "$TOP" | claude_cap -p "$prompt_ideas" > "$ideas_path" 2>>"$LOG"; then
   bytes=$(wc -c < "$ideas_path" | tr -d ' ')
   log "[5/10] done in $((SECONDS - t))s — $ideas_path ($bytes bytes)"
 else
@@ -133,7 +161,7 @@ log "[6/10] generating reels masivo via claude -p (~1-2 min)..."
 t=$SECONDS
 prompt_reels="$(cat prompts/reels.md)"
 reels_path="reels/$STAMP.md"
-if cat "$TOP" | claude -p "$prompt_reels" > "$reels_path" 2>>"$LOG"; then
+if cat "$TOP" | claude_cap -p "$prompt_reels" > "$reels_path" 2>>"$LOG"; then
   bytes=$(wc -c < "$reels_path" | tr -d ' ')
   log "[6/10] done in $((SECONDS - t))s — $reels_path ($bytes bytes)"
 else
@@ -194,7 +222,7 @@ prompt_cards="$(cat prompts/cards.md)"
 # (extraemos del primer { al último }) y reintentamos una vez si el JSON sigue inválido.
 pool_ok=0
 for attempt in 1 2; do
-  if ! cat "$CARDS_INPUT" | claude -p "$prompt_cards" > "$POOL_RAW" 2>>"$LOG"; then
+  if ! cat "$CARDS_INPUT" | claude_cap -p "$prompt_cards" > "$POOL_RAW" 2>>"$LOG"; then
     log "[7/10] intento $attempt/2: claude falló — reintento"
     continue
   fi
@@ -204,15 +232,19 @@ raw = open(sys.argv[1], encoding="utf-8").read()
 i, j = raw.find("{"), raw.rfind("}")
 sys.stdout.write(raw[i:j + 1] if i != -1 and j > i else raw)
 PY
-  if jq empty "$POOL_FILE" 2>>"$LOG"; then
+  # Válido = JSON parseable CON al menos MIN_CARDS cards. Un {"cards":[]} pasa `jq empty`
+  # (sintaxis OK) pero es un drop vacío que no sirve publicar — lo tratamos como fallo y
+  # reintentamos. MIN_CARDS configurable; default 3 (holgado vs los ~15-19 de un día sano).
+  n_cards="$(jq -e '.cards | length' "$POOL_FILE" 2>>"$LOG" || echo -1)"
+  if [ "$n_cards" -ge "${MIN_CARDS:-3}" ]; then
     pool_ok=1
     break
   fi
-  log "[7/10] intento $attempt/2: Pool JSON inválido tras sanitizar — reintento"
+  log "[7/10] intento $attempt/2: Pool inválido o con pocas cards ($n_cards < ${MIN_CARDS:-3}) — reintento"
 done
 
 if (( ! pool_ok )); then
-  log "[7/10] FAILED — Pool JSON inválido tras 2 intentos; ver $POOL_FILE y $LOG"
+  log "[7/10] FAILED — Pool JSON inválido o vacío tras 2 intentos; ver $POOL_FILE y $LOG"
   exit 1
 fi
 cards_count="$(jq '.cards | length' "$POOL_FILE")"

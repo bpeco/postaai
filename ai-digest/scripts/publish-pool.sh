@@ -50,7 +50,30 @@ cp "$POOL_FILE" "$CONTENT_REPO/archive/$DATE-$SLOT.json"
 cd "$CONTENT_REPO"
 
 # Pull primero por si Bauti tocó algo desde otro lugar (kill-switch desde el celu, edit web).
+# OJO: con --autostash, si el pop del stash choca, git deja marcadores de conflicto en
+# latest.json y RETORNA 0 (set -e no lo cacha). Por eso validamos a mano abajo antes de
+# commitear — un JSON roto publicado rompe el decode en la app (cae al caché → cards viejas).
 git pull --rebase --autostash >&2
+
+# Guard 1: rebase a medias / paths sin mergear → abortar, NO commitear basura.
+if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ] || [ -n "$(git ls-files -u)" ]; then
+  echo "publish-pool: ERROR — rebase/merge sin resolver tras el pull (¿conflicto de autostash?). Abort sin commitear." >&2
+  exit 1
+fi
+
+# Guard 2: marcadores de conflicto literales en el Pool (defensa por si el guard 1 no los ve).
+if grep -Eq '^(<<<<<<< |=======$|>>>>>>> )' latest.json; then
+  echo "publish-pool: ERROR — latest.json tiene marcadores de conflicto sin resolver. Abort sin commitear." >&2
+  exit 1
+fi
+
+# Guard 3: el Pool tiene que ser JSON válido CON al menos 1 card (un drop vacío no se publica).
+pool_cards="$(jq -e '.cards | length' latest.json 2>/dev/null || echo -1)"
+if [ "$pool_cards" -lt 1 ]; then
+  echo "publish-pool: ERROR — latest.json inválido o sin cards (cards=$pool_cards). Abort sin commitear." >&2
+  exit 1
+fi
+echo "publish-pool: validación OK — $pool_cards cards en latest.json" >&2
 
 git add latest.json "archive/$DATE-$SLOT.json"
 

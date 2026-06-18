@@ -61,7 +61,11 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code
+        # Versión PINEADA (no 'latest'): el runner instalaba la última en cada corrida, lo que
+        # vuelve el cron no-reproducible y deja que un bump del CLI rompa el headless sin aviso
+        # (sospechoso del cuelgue que arrancó ~16/06). 2.1.177 = la conocida-buena (la que corre
+        # local). Para subir de versión: cambiar acá a propósito y verificar un run manual.
+        run: npm install -g @anthropic-ai/claude-code@2.1.177
 
       - name: Configurar identidad git (para el commit a postaai-content)
         # Identidad válida cualquiera (git la exige para commitear). El deploy a Vercel NO
