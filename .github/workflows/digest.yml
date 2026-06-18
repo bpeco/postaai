@@ -77,29 +77,14 @@ jobs:
 
       - name: Correr pipeline (--pool-only) y publicar al CDN
         env:
+          # API key tiene prioridad si está cargada (ANTHROPIC_API_KEY). Si no, cae al OAuth de
+          # Claude Max. El OAuth se cuelga en requests grandes (fase 7) desde ~16/06 — por eso
+          # se recomienda cargar ANTHROPIC_API_KEY como secret. Ver ai-digest/CLAUDE.md.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # publish-pool.sh pushea al checkout de postaai-content del workspace.
           CONTENT_REPO: ${{ github.workspace }}/postaai-content
-          CLAUDE_DEBUG: "1" # DIAG TEMPORAL: --debug en las llamadas a claude
-          CLAUDE_TIMEOUT: "180" # DIAG: cortá antes (3min) para no esperar 14min por run
         run: ./ai-digest/scripts/run-digest.sh --pool-only
-
-      - name: DIAG — correr la llamada de fase 7 directo, stderr visible
-        if: always()
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-        run: |
-          set +e
-          IN=$(ls -t /tmp/digest-cards-input-*.json 2>/dev/null | head -1)
-          echo "input file: $IN ($(wc -c <"$IN" 2>/dev/null) bytes)"
-          echo "===== mini call (referencia: debería tardar ~3s) ====="
-          echo "hola" | timeout 60 claude --tools "" -p "decí solo: ok"; echo "[mini exit=$?]"
-          echo "===== real call (cards.md sobre el input real, cap 150s, stderr→stdout) ====="
-          cat "$IN" | timeout 150 claude --tools "" --debug -p "$(cat ai-digest/prompts/cards.md)" > /tmp/diag-out.txt 2>&1
-          echo "[real exit=$? — 124=timeout]"
-          echo "----- bytes stdout+stderr: $(wc -c </tmp/diag-out.txt) -----"
-          echo "----- primeras 60 líneas -----"; head -n 60 /tmp/diag-out.txt
-          echo "----- últimas 40 líneas -----"; tail -n 40 /tmp/diag-out.txt
 
       - name: Disparar deploy en Vercel (Deploy Hook)
         # El hook deploya el último commit de postaai-content sin mirar el autor → evita

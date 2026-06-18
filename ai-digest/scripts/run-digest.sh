@@ -85,7 +85,7 @@ fi
 #   tiene permisos pre-aprobados). Sin tools = nada que aprobar = no se cuelga. Era la causa del
 #   cron muerto desde ~16/06. (Probado: --tools "" → JSON OK; --bare suprime el output de -p, no usar.)
 CLAUDE_FLAGS=(--tools "")
-# DIAG TEMPORAL: --debug para capturar por qué claude se cuelga en CI (va a stderr → $LOG).
+# Para debug headless: CLAUDE_DEBUG=1 agrega --debug (stderr → $LOG).
 if [ "${CLAUDE_DEBUG:-}" = "1" ]; then CLAUDE_FLAGS+=(--debug); fi
 claude_cap() {
   if [ -n "$_TIMEOUT_BIN" ]; then
@@ -95,7 +95,21 @@ claude_cap() {
   fi
 }
 
+# Selección de auth: si hay ANTHROPIC_API_KEY (pay-per-use), la priorizamos y desactivamos el
+# OAuth de Claude Max — determinístico, sin depender de la precedencia interna del CLI. El OAuth
+# de Max se cuelga en requests grandes (fase 7) en CI desde ~16/06; la API key es la ruta robusta.
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+  unset CLAUDE_CODE_OAUTH_TOKEN
+  AUTH_MODE="ANTHROPIC_API_KEY (API pay-per-use)"
+elif [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+  AUTH_MODE="CLAUDE_CODE_OAUTH_TOKEN (Claude Max — ojo: cuelga en requests grandes en CI)"
+else
+  AUTH_MODE="(ninguna var de auth seteada — claude usará keychain/login local)"
+fi
+
 T0=$SECONDS
+
+log "auth: $AUTH_MODE"
 
 if [ -z "$_TIMEOUT_BIN" ]; then
   log "WARN: ni 'timeout' ni 'gtimeout' disponibles — las llamadas a claude corren SIN cap (instalá coreutils en Mac: brew install coreutils)"
