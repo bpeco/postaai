@@ -80,7 +80,15 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # publish-pool.sh pushea al checkout de postaai-content del workspace.
           CONTENT_REPO: ${{ github.workspace }}/postaai-content
+          CLAUDE_DEBUG: "1" # DIAG TEMPORAL: --debug en las llamadas a claude
+          CLAUDE_TIMEOUT: "180" # DIAG: cortá antes (3min) para no esperar 14min por run
         run: ./ai-digest/scripts/run-digest.sh --pool-only
+
+      - name: DIAG — volcar log de claude/pipeline
+        if: always()
+        run: |
+          echo "=== tail del log de run-digest (incluye stderr/--debug de claude) ==="
+          tail -n 200 /tmp/ai-digest-*.log 2>/dev/null || echo "(no hay log)"
 
       - name: Disparar deploy en Vercel (Deploy Hook)
         # El hook deploya el último commit de postaai-content sin mirar el autor → evita

@@ -85,6 +85,8 @@ fi
 #   tiene permisos pre-aprobados). Sin tools = nada que aprobar = no se cuelga. Era la causa del
 #   cron muerto desde ~16/06. (Probado: --tools "" → JSON OK; --bare suprime el output de -p, no usar.)
 CLAUDE_FLAGS=(--tools "")
+# DIAG TEMPORAL: --debug para capturar por qué claude se cuelga en CI (va a stderr → $LOG).
+if [ "${CLAUDE_DEBUG:-}" = "1" ]; then CLAUDE_FLAGS+=(--debug); fi
 claude_cap() {
   if [ -n "$_TIMEOUT_BIN" ]; then
     "$_TIMEOUT_BIN" "$CLAUDE_TIMEOUT" claude "${CLAUDE_FLAGS[@]}" "$@"
