@@ -27,6 +27,8 @@ Si el input no tiene `meta.date` / `meta.edition` / `meta.number`, copialos tal 
 
 **SOLO JSON válido**, sin markdown wrapper, sin texto antes ni después, sin bloque de código. Empezás con `{` y terminás con `}`. Estructura exacta:
 
+> **CRÍTICO — comillas dentro del texto.** Los valores de texto (`headline`, `take`, `context`, `editorial`) van entre comillas dobles de JSON. **NUNCA uses comillas dobles (`"`) DENTRO de un valor de texto** — rompen el JSON. Si necesitás citar, dar énfasis o nombrar algo, usá comillas simples (`'`) o angulares (`« »`). Ejemplo: NO `"para de ser "alternativa""` → SÍ `"para de ser 'alternativa'"`.
+
 ```json
 {
   "date": "<de meta.date>",

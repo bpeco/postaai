@@ -82,6 +82,16 @@ jobs:
           # se recomienda cargar ANTHROPIC_API_KEY como secret. Ver ai-digest/CLAUDE.md.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Fase 7 (cards) = Sonnet 4.6 + effort low. Medido local 19/06 sobre el input real:
+          # 232s / 12 cards / JSON válido / tags de entidad correctos (GLM-5.2→Z.ai). El default
+          # del script es Opus (conocido-bueno); acá pisamos a Sonnet+low solo para el cron.
+          # OJO: el effort importa — Sonnet SIN effort (o medium) dispara ~20min de thinking y
+          # choca el cap → era la causa del FAILED del 19/06, NO Sonnet en sí. Ver ai-digest/CLAUDE.md.
+          CARDS_MODEL: claude-sonnet-4-6
+          CARDS_EFFORT: low
+          # Cap por llamada a 600s: margen sobre los 232s locales por si la nube va más lenta,
+          # y entra en el timeout-minutes:15 (900s) del job aun con un reintento.
+          CLAUDE_TIMEOUT: "600"
           # publish-pool.sh pushea al checkout de postaai-content del workspace.
           CONTENT_REPO: ${{ github.workspace }}/postaai-content
         run: ./ai-digest/scripts/run-digest.sh --pool-only
