@@ -62,7 +62,7 @@ Testear una fase aislada: `cat /tmp/digest-top-STAMP.json | claude -p "$(cat pro
 
 ## Archivos clave
 
-- `scripts/run-digest.sh` — orchestrator. PATH explícito al tope (corre igual bajo launchd que interactivo). Helper `claude_cap` envuelve TODA llamada a claude con `--tools ""` + timeout (`CLAUDE_TIMEOUT`=420s). Fase 7 exige `>= MIN_CARDS` (3) o reintenta/falla — un `{"cards":[]}` no pasa.
+- `scripts/run-digest.sh` — orchestrator. PATH explícito al tope (corre igual bajo launchd que interactivo). Helper `claude_cap` envuelve TODA llamada a claude con `--tools ""` + timeout (`CLAUDE_TIMEOUT`=420s). Fase 7 exige `>= MIN_CARDS` (3) o reintenta/falla — un `{"cards":[]}` no pasa. La fase 7 (cards) corre en `CARDS_MODEL` (default `claude-sonnet-4-6`) con `CARDS_EFFORT` (default `medium`) — más barato que Opus sin perder la voz editorial; el output (≈18K tok en Opus high) era el 76% del costo. Overrideable por env (ej. comparar Haiku: `CARDS_MODEL=claude-haiku-4-5`). Las fases 4-6 (digest/ideas/reels) NO usan esto — corren local con la subscription de Bauti.
 - `scripts/fetch-sources.sh` — curl paralelo; bodies en base64; usa `jq --rawfile` (no `--arg`) para feeds grandes.
 - `scripts/extract-items.py` — parser stdlib. `MAX_ITEMS_PER_SOURCE=30`. Limpia chars de control C0 que rompen el JSON.
 - `scripts/rank-items.py` — dedup (URL normalizada + Jaccard 0.85), score = `source_weight × recency + engagement_boost`, `MAX_PER_SOURCE=3` en el top final (evita que arxiv inunde).

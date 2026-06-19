@@ -87,6 +87,16 @@ fi
 CLAUDE_FLAGS=(--tools "")
 # Para debug headless: CLAUDE_DEBUG=1 agrega --debug (stderr → $LOG).
 if [ "${CLAUDE_DEBUG:-}" = "1" ]; then CLAUDE_FLAGS+=(--debug); fi
+
+# Modelo/effort SOLO de la fase 7 (cards = la única tarea LLM del cron, la que cuesta API).
+# Sonnet 4.6 en vez de Opus 4.8: misma calidad de escritura para esta tarea, ~30% más barato
+# ($3/$15 vs $5/$25 por 1M tok). effort=medium (recomendado por Anthropic para Sonnet): baja el
+# "thinking" que inflaba el output a ~18K tok (76% del costo medido) sin perder el "take de Posta".
+# Las fases 4-6 (digest/ideas/reels) NO usan esto — corren local con la subscription de Bauti.
+# Override por env si hace falta comparar: CARDS_MODEL=claude-haiku-4-5 CARDS_EFFORT=low, etc.
+CARDS_MODEL="${CARDS_MODEL:-claude-sonnet-4-6}"
+CARDS_EFFORT="${CARDS_EFFORT:-medium}"
+
 claude_cap() {
   if [ -n "$_TIMEOUT_BIN" ]; then
     "$_TIMEOUT_BIN" "$CLAUDE_TIMEOUT" claude "${CLAUDE_FLAGS[@]}" "$@"
@@ -197,6 +207,7 @@ fi  # end del skip de fases 4-6 (--pool-only)
 # Ensancha el rank a top ~35 (cap 5/source) y corre cards.md sobre ese set.
 # El Pool va a /tmp/ y de ahí lo publica la fase 10 al CDN (postaai-content → Vercel).
 log "[7/10] generating Pool JSON (wider rank + claude -p cards.md, ~1-2 min)..."
+log "[7/10]   modelo: $CARDS_MODEL · effort: $CARDS_EFFORT"
 t=$SECONDS
 
 TOP_POOL="/tmp/digest-top-pool-$STAMP.json"
@@ -256,7 +267,7 @@ prompt_cards="$(cat prompts/cards.md)"
 # (extraemos del primer { al último }) y reintentamos una vez si el JSON sigue inválido.
 pool_ok=0
 for attempt in 1 2; do
-  if ! cat "$CARDS_INPUT" | claude_cap -p "$prompt_cards" > "$POOL_RAW" 2>>"$LOG"; then
+  if ! cat "$CARDS_INPUT" | claude_cap --model "$CARDS_MODEL" --effort "$CARDS_EFFORT" -p "$prompt_cards" > "$POOL_RAW" 2>>"$LOG"; then
     log "[7/10] intento $attempt/2: claude falló — reintento"
     continue
   fi
