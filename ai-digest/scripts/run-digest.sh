@@ -204,6 +204,18 @@ python3 ./scripts/rank-items.py "$ITEMS" --top 35 --max-per-source 5 > "$TOP_POO
 top_pool_count="$(jq 'length' "$TOP_POOL")"
 log "[7/10]   wider rank: $top_pool_count items (target 30-40)"
 
+# Enriquecimiento: algunos feeds (anthropic_research/news) dan SOLO título → summary vacío →
+# claude genera cards huecas. enrich-items baja el artículo real de la fuente y lo usa como
+# summary (graceful: si la fuente bloquea/falla, deja el item igual). Reemplaza TOP_POOL in-place.
+TOP_POOL_ENRICHED="/tmp/digest-top-pool-enriched-$STAMP.json"
+if python3 ./scripts/enrich-items.py "$TOP_POOL" > "$TOP_POOL_ENRICHED" 2>>"$LOG"; then
+  enriched_n="$(jq '[.[] | select(._enriched == true)] | length' "$TOP_POOL_ENRICHED" 2>/dev/null || echo 0)"
+  log "[7/10]   enriquecidos $enriched_n items (bajando el artículo de la fuente)"
+  TOP_POOL="$TOP_POOL_ENRICHED"
+else
+  log "[7/10]   WARN enrich-items falló — sigo con los items sin enriquecer"
+fi
+
 # Compute edition meta (placeholder-grade — Etapa 3 lo refina con locale es_AR).
 HOUR="${STAMP##*-}"
 DATE_ONLY="${STAMP%-*}"  # YYYY-MM-DD

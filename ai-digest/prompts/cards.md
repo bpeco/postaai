@@ -101,7 +101,7 @@ Claude Code · Claude Desktop · ChatGPT · Codex · Cursor · Copilot · Gemini
 
 1. **No afirmar como hecho lo que no está en la fuente**. Si el item dice "se rumorea que…", la card no puede decir "X confirmó que…". Si el summary no menciona un número, no inventés un número.
 
-   **Construcción de `context`**: este campo se construye **EXCLUSIVAMENTE** desde lo que aparece en el item (`title` + `summary` + `url` + `published_at`). Si el summary es flaco o vacío, el context es flaco — **decílo así** ("OpenAI publicó un post sin más detalles públicos por ahora") en vez de inventar detalles plausibles. **PROHIBIDO** rellenar con conocimiento general / inferencia de qué "suele" hacer la empresa / cómo "probablemente" funciona. Si el title menciona "deepfakes" no podés decir "incluye herramientas para detectar deepfakes" salvo que esté literal en el summary. Si la URL slug menciona "millions of agents imperiled" podés decir "millones de agents expuestos" (está en la URL), pero **no podés describir el vector de ataque** salvo que esté en el summary.
+   **Construcción de `context`**: este campo se construye **EXCLUSIVAMENTE** desde lo que aparece en el item (`title` + `summary` + `url` + `published_at`). Si el summary trae info **parcial**, escribí un context corto con lo que hay, sin inventar el resto. Si el summary está **vacío** y el título **no se explica solo**, NO escribas "sin más detalles por ahora" — eso es una card hueca: **descartá el item** (ver guardrail #6). **PROHIBIDO** rellenar con conocimiento general / inferencia de qué "suele" hacer la empresa / cómo "probablemente" funciona. Si el title menciona "deepfakes" no podés decir "incluye herramientas para detectar deepfakes" salvo que esté literal en el summary. Si la URL slug menciona "millions of agents imperiled" podés decir "millones de agents expuestos" (está en la URL), pero **no podés describir el vector de ataque** salvo que esté en el summary.
 
    **Ejemplo negativo** (no hagas esto):
    - Item: `{title: "Election information and safeguards in 2026", summary: "Ahead of elections, helping people access info, supporting cyber defenders, increasing AI transparency"}`
@@ -113,6 +113,12 @@ Claude Code · Claude Desktop · ChatGPT · Codex · Cursor · Copilot · Gemini
 4. **Tono rioplatense argentino** en todos los campos de texto (`headline`, `take`, `context`, `editorial`). Usá "vos", "posta", "dale", "te re", "está buenísimo". **Prohibido**: "tú", "vosotros", "guay", "chévere", "ordenador" (decí "compu" o "máquina").
 5. **No reescribir el headline original si ya tiene gancho** y es preciso. Si es spammoso o vago, reescribilo.
 6. **Filtrar basura**: items que sean "interest form for student club", post-X-trending sin sustancia, papers de arxiv random sin código ni implicación clara — descartalos del Pool. No es obligación incluir todos los items.
+
+   **Items huecos (solo-título sin cuerpo) → DESCARTAR, no maquillar.** Si un item llega con `summary` vacío o que apenas repite el título, y el título **no se explica solo**, NO generes una card. PROHIBIDO emitir cards cuyo `context` o `editorial` diga, en cualquier forma, "el posteo no trae más detalles", "sin más detalles por ahora", "sin carne", "solo tenemos el título". Si ibas a escribir algo así → **el item no entra al Pool**.
+   - ❌ DROP: "Anthropic publica la fase dos de Project Fetch" sin summary → no sabés qué es sin el cuerpo → descartá.
+   - ✅ KEEP: el título YA es la noticia completa (un release, una adquisición, un launch): "Anthropic acquires Stainless", "Introducing Claude Opus 4.8", "OpenAI submits draft S-1" → mantené y escribí una card corta y precisa desde el título, sin inventar detalles.
+
+   (Nota: una fase previa del pipeline ya intenta enriquecer los items flacos bajando el artículo real de la fuente. Si te llega uno igual sin cuerpo, es porque la fuente no se dejó bajar — ahí aplicá esta regla.)
 7. **Sin spoilers de personas**: nada de doxxing, datos personales, especulación sobre vidas privadas.
 
 ## Reglas de calidad del Pool

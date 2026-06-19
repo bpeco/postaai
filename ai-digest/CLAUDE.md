@@ -21,6 +21,7 @@ run-digest.sh (entry point)
   [5] claude -p ideas    → ideas/STAMP.md     (8 ideas de Shorts técnicas, para devs)
   [6] claude -p reels    → reels/STAMP.md     (10 ideas de Reels masivas, para no-devs)
   [7] claude -p cards    → /tmp/digest-pool-STAMP.json  (Pool/Drop JSON que consume la app; wider rank top ~35)
+      ├─ enrich-items.py   (antes de cards: baja el artículo de los items solo-título y lo usa de summary)
   [8] send-email.py digest → Email A "AI digest STAMP"  (digest + ideas técnico)
   [9] send-email.py reels  → Email B "Reels ideas STAMP" (reels masivo)
   [10] publish-pool.sh   → push del Pool a postaai-content → CDN (Vercel)
@@ -65,6 +66,7 @@ Testear una fase aislada: `cat /tmp/digest-top-STAMP.json | claude -p "$(cat pro
 - `scripts/fetch-sources.sh` — curl paralelo; bodies en base64; usa `jq --rawfile` (no `--arg`) para feeds grandes.
 - `scripts/extract-items.py` — parser stdlib. `MAX_ITEMS_PER_SOURCE=30`. Limpia chars de control C0 que rompen el JSON.
 - `scripts/rank-items.py` — dedup (URL normalizada + Jaccard 0.85), score = `source_weight × recency + engagement_boost`, `MAX_PER_SOURCE=3` en el top final (evita que arxiv inunde).
+- `scripts/enrich-items.py` — corre en fase 7 antes de cards. Para items con `summary` flaco (<200 chars) baja el artículo real de la fuente (fetch paralelo, strip a texto, trunca a 2000 chars) y lo usa de summary → evita cards huecas de posts solo-título (ej. anthropic_research). Graceful: si la fuente bloquea (muro JS) o falla, deja el item sin tocar. Stdlib-only, sin deps nuevas.
 - `scripts/send-email.py` — `pandoc` (markdown→HTML5) + `email.message.EmailMessage` multipart/alternative + `msmtp -a gmail`. Modos `digest` / `reels`.
 - `sources.json` — 21 fuentes. Tipos: `rss` | `hn_algolia` | `reddit_json` | `webfetch`. Si agregás una, sumá su peso a `SOURCE_WEIGHTS` en `rank-items.py`.
 - `prompts/{digest,ideas,reels}.md` — los 3 prompts. Cambios surten efecto al próximo run, sin tocar código.
